@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AA PriorityFlow Prototip</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root { --aa-dark: #343a40; }
+        body { background-color: #f8f9fa; }
+        .header-section { background-color: var(--aa-dark); color: white; padding: 20px 0; margin-bottom: 30px; }
+        .feed-item { border-left: 5px solid #007bff; }
+        .feed-urgent { border-left: 5px solid #dc3545 !important; background-color: #f8d7da; }
+        .loading-icon { display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="header-section text-center">
+        <div class="container">
+            <h1>AA <span style="color: #ffc107;">PriorityFlow</span></h1>
+            <p class="lead">Hibrit Akış Yönetimi: Kişiselleştirme + Önceliklendirme</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="card p-4 mb-4 shadow-sm">
+            <h5 class="card-title">⚙️ Akış Kontrolü</h5>
+            <div class="row g-3 align-items-center">
+                <div class="col-md-5">
+                    <label for="userIdSelect" class="form-label">Kullanıcı Seçin:</label>
+                    <select id="userIdSelect" class="form-select">
+                        {% for user_id in user_ids %}
+                        <option value="{{ user_id }}">{{ user_id }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-4">
+                    <label class="form-label text-danger">EDİTÖR PANELİ:</label>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="breakingSwitch">
+                        <label class="form-check-label" for="breakingSwitch">Acil/Kritik Haber Aktif</label>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <button class="btn btn-primary w-100 mt-md-3" id="generateFeedBtn">
+                        <span class="spinner-border spinner-border-sm loading-icon me-2" role="status" aria-hidden="true"></span>
+                        Akışı Oluştur
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="results" class="row">
+            </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Hata çözümü: Temizlenmiş veriyi doğrudan HTML'den alıyoruz
+        const userProfiles = JSON.parse('{{ user_profiles | tojson | safe }}'); 
+
+        document.addEventListener('DOMContentLoaded', function() {
+            fetchFeed(); 
+        });
+
+        document.getElementById('generateFeedBtn').addEventListener('click', fetchFeed);
+        document.getElementById('breakingSwitch').addEventListener('change', fetchFeed);
+        document.getElementById('userIdSelect').addEventListener('change', fetchFeed);
+
+        function fetchFeed() {
+            const userId = document.getElementById('userIdSelect').value;
+            const isBreaking = document.getElementById('breakingSwitch').checked;
+            const resultsDiv = document.getElementById('results');
+            const btn = document.getElementById('generateFeedBtn');
+
+            btn.disabled = true;
+            btn.querySelector('.loading-icon').style.display = 'inline-block';
+            resultsDiv.innerHTML = `<div class="col-12 text-center mt-5"><p class="text-primary">Akış yükleniyor...</p></div>`;
+
+            fetch('/api/feed', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ user_id: userId, is_breaking: isBreaking })
+            })
+            .then(response => response.json())
+            .then(data => {
+                btn.disabled = false;
+                btn.querySelector('.loading-icon').style.display = 'none';
+
+                if (data.error) {
+                    resultsDiv.innerHTML = `<div class="col-12"><div class="alert alert-danger" role="alert">Hata: ${data.error}</div></div>`;
+                    return;
+                }
+                
+                const interests = data.user_interest ? Object.entries(data.user_interest).map(([k, v]) => `${k} (${(v*100).toFixed(0)}%)`).join(', ') : 'Bilinmiyor';
+                
+                let html = `
+                    <div class="col-12 mb-3">
+                        <h4 class="text-primary">Kullanıcı: ${userId} - ${userProfiles[userId].name}</h4>
+                        <p class="text-muted">İlgi Alanları: ${interests}</p>
+                        <p class="text-muted">Acil Durum Kuralı: <strong>${data.priority_override ? 'AKTİF' : 'PASİF'}</strong></p>
+                    </div>
+                `;
+
+                data.feed.forEach((item, index) => {
+                    const isUrgent = item.is_urgent;
+                    const cardClass = isUrgent ? 'feed-urgent' : 'feed-item';
+                    const score = isUrgent ? 'OVERRIDE' : item.relevance_score;
+                    const rank = index + 1;
+
+                    html += `
+                        <div class="col-12">
+                            <div class="card mb-2 ${cardClass}">
+                                <div class="card-body py-2">
+                                    <div class="row align-items-center">
+                                        <div class="col-1 text-center">
+                                            <h4 class="mb-0 text-muted">${rank}.</h4>
+                                        </div>
+                                        <div class="col-9">
+                                            <h6 class="mb-0">${item.title}</h6>
+                                            <span class="badge bg-secondary">${item.category}</span>
+                                            <span class="badge bg-light text-muted">${item.date}</span>
+                                        </div>
+                                        <div class="col-2 text-end">
+                                            <span class="badge ${isUrgent ? 'bg-danger' : 'bg-success'}">${score}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                resultsDiv.innerHTML = html;
+            })
+            .catch(error => {
+                btn.disabled = false;
+                btn.querySelector('.loading-icon').style.display = 'none';
+                resultsDiv.innerHTML = `<div class="col-12"><div class="alert alert-danger" role="alert">Bağlantı Hatası: ${error.message}</div></div>`;
+            });
+        }
+    </script>
+</body>
+</html>

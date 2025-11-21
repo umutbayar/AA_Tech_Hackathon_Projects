@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AA Context | Arşivden İçerik Üretimi</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --aa-dark: #343a40; 
+        }
+        body { background-color: #f8f9fa; }
+        .header-section { 
+            background-color: var(--aa-dark); 
+            color: white; 
+            padding: 20px 0; 
+            margin-bottom: 30px;
+        }
+        .loading-icon { display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="header-section text-center">
+        <div class="container">
+            <h1>AA <span style="color: #ffc107;">Context</span></h1>
+            <p class="lead">Güncel Haberlere Anlık Bağlamsal İçerik Önerisi</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="card p-4 mb-4 shadow-sm">
+            <h5 class="card-title">✍️ Güncel Haber Metnini Girin</h5>
+            <form id="contextForm" class="row g-3">
+                <div class="col-12">
+                    <textarea class="form-control" id="newsText" rows="4" placeholder="Örn: Hükümet, yüksek enflasyonla mücadele için tarihi bir mali reform paketini meclise sundu..." required></textarea>
+                </div>
+                <div class="col-12 text-end">
+                    <button type="submit" class="btn btn-primary" id="analyzeBtn">
+                        <span class="spinner-border spinner-border-sm loading-icon me-2" role="status" aria-hidden="true"></span>
+                        Arşivden Bağlam Bul
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div id="results" class="row">
+            </div>
+
+        <div id="loading" class="text-center mt-5" style="display: none;">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Yükleniyor...</span>
+            </div>
+            <p class="mt-2">DAS verileri taranıyor, anlamsal sonuçlar getiriliyor...</p>
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.getElementById('contextForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const newsText = document.getElementById('newsText').value;
+            const resultsDiv = document.getElementById('results');
+            const loadingDiv = document.getElementById('loading');
+            const analyzeBtn = document.getElementById('analyzeBtn');
+
+            resultsDiv.innerHTML = '';
+            loadingDiv.style.display = 'block';
+            analyzeBtn.disabled = true;
+            analyzeBtn.querySelector('.loading-icon').style.display = 'inline-block';
+
+            fetch('/api/context', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ news_text: newsText })
+            })
+            .then(response => response.json())
+            .then(data => {
+                loadingDiv.style.display = 'none';
+                analyzeBtn.disabled = false;
+                analyzeBtn.querySelector('.loading-icon').style.display = 'none';
+
+                if (data.error) {
+                    resultsDiv.innerHTML = `<div class="col-12"><div class="alert alert-danger" role="alert">Hata: ${data.error}</div></div>`;
+                    return;
+                }
+                
+                resultsDiv.innerHTML = `
+                    <div class="col-12 mb-3">
+                        <h4 class="text-primary">Arşivden ${data.count} Bağlamsal Öneri Bulundu</h4>
+                        <p class="text-muted">Arama Sorgusu: ${data.query}</p>
+                    </div>
+                    ${data.relevant_content.map(createResultCard).join('')}
+                `;
+            })
+            .catch(error => {
+                loadingDiv.style.display = 'none';
+                analyzeBtn.disabled = false;
+                analyzeBtn.querySelector('.loading-icon').style.display = 'none';
+                resultsDiv.innerHTML = `<div class="col-12"><div class="alert alert-danger" role="alert">Bağlantı Hatası: ${error.message}</div></div>`;
+            });
+        });
+
+        // Sonuç kartlarını oluşturan fonksiyon
+        function createResultCard(item) {
+            const badgeClass = parseFloat(item.similarity_score) >= 0.5 ? 'bg-success' : 'bg-info';
+
+            return `
+                <div class="col-md-6">
+                    <div class="card mb-3 shadow-sm">
+                        <div class="card-body">
+                            <h5 class="card-title">${item.title} <span class="badge ${badgeClass} float-end">Benzerlik: ${item.similarity_score}</span></h5>
+                            <h6 class="card-subtitle mb-2 text-muted">Arşiv Tarihi: ${item.date}</h6>
+                            <p class="card-text">${item.summary}</p>
+                            <details>
+                                <summary class="text-primary" style="cursor:pointer;">Tam Metni Gör</summary>
+                                <p class="small mt-2">${item.full_text}</p>
+                            </details>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>

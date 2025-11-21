@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AA Visualizer | Metinden Görsel Üretimi</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root { --aa-dark: #343a40; }
+        body { background-color: #f8f9fa; }
+        .header-section { background-color: var(--aa-dark); color: white; padding: 20px 0; margin-bottom: 30px; }
+        .loading-icon { display: none; }
+        #imageContainer { border: 2px dashed #ccc; min-height: 300px; display: flex; align-items: center; justify-content: center; background-color: #e9ecef; }
+        #generatedImage { max-width: 100%; height: auto; border-radius: 8px; }
+    </style>
+</head>
+<body>
+
+    <div class="header-section text-center">
+        <div class="container">
+            <h1>AA <span style="color: #ffc107;">Visualizer</span></h1>
+            <p class="lead">Haber Metninden Anında Görsel Komut Üretimi (Text-to-Prompt)</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="card p-4 mb-4 shadow-sm">
+            <h5 class="card-title">✍️ Haber Metnini Girin</h5>
+            <form id="visualizerForm" class="row g-3">
+                <div class="col-12">
+                    <textarea class="form-control" id="newsText" rows="4" placeholder="Örn: Türkiye'nin yerli insansız hava aracı (İHA) teknolojileri, uluslararası pazarda rekor bir ihracat başarısı elde etti. Savunma sanayii, yapay zeka destekli yeni bir drone modelini tanıttı." required></textarea>
+                </div>
+                <div class="col-12 text-end">
+                    <button type="submit" class="btn btn-primary" id="analyzeBtn">
+                        <span class="spinner-border spinner-border-sm loading-icon me-2" role="status" aria-hidden="true"></span>
+                        Görsel Komut (Prompt) Üret
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div id="results" class="row">
+            </div>
+
+        <div id="loading" class="text-center mt-5" style="display: none;">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Yükleniyor...</span>
+            </div>
+            <p class="mt-2">Metin analiz ediliyor ve komut üretiliyor...</p>
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.getElementById('visualizerForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const newsText = document.getElementById('newsText').value;
+            const resultsDiv = document.getElementById('results');
+            const loadingDiv = document.getElementById('loading');
+            const analyzeBtn = document.getElementById('analyzeBtn');
+
+            resultsDiv.innerHTML = '';
+            loadingDiv.style.display = 'block';
+            analyzeBtn.disabled = true;
+            analyzeBtn.querySelector('.loading-icon').style.display = 'inline-block';
+
+            fetch('/api/generate_prompt', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ news_text: newsText })
+            })
+            .then(response => response.json())
+            .then(data => {
+                loadingDiv.style.display = 'none';
+                analyzeBtn.disabled = false;
+                analyzeBtn.querySelector('.loading-icon').style.display = 'none';
+
+                if (data.error) {
+                    resultsDiv.innerHTML = `<div class="col-12"><div class="alert alert-danger" role="alert">Hata: ${data.error}</div></div>`;
+                    return;
+                }
+                
+                resultsDiv.innerHTML = `
+                    <div class="col-12 mb-4">
+                        <h4 class="text-primary">✅ Analiz Sonuçları ve Komut</h4>
+                        <div class="card shadow-sm p-3">
+                            <h6>Üretilen Görsel Komut (Prompt):</h6>
+                            <p class="fst-italic border p-2 bg-light">${data.generated_prompt}</p>
+                            
+                            <h6>NLP Analizi:</h6>
+                            <ul>
+                                <li><strong>Ana Konu:</strong> ${data.analysis.main_subject}</li>
+                                <li><strong>Kategori:</strong> ${data.analysis.category}</li>
+                                <li><strong>Ruh Hali:</strong> ${data.analysis.sentiment}</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="col-12 mt-4">
+                        <h4 class="text-primary">🖼️ Görsel Simülasyon</h4>
+                        <div id="imageContainer" class="p-3 text-center">
+                            <p>Bu komut (prompt), harici bir Metin-Görsel AI motoruna gönderilecektir.</p>
+                            <p class="text-muted">Prototipimiz, jüriye gösterilecek canlı demoda bu aşamayı tamamlar.</p>
+                        </div>
+                    </div>
+                `;
+            })
+            .catch(error => {
+                loadingDiv.style.display = 'none';
+                analyzeBtn.disabled = false;
+                analyzeBtn.querySelector('.loading-icon').style.display = 'none';
+                resultsDiv.innerHTML = `<div class="col-12"><div class="alert alert-danger" role="alert">Bağlantı Hatası: ${error.message}</div></div>`;
+            });
+        });
+    </script>
+</body>
+</html>
