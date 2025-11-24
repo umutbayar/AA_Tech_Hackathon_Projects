@@ -4,18 +4,16 @@ from personalization_module import initialize_data, get_personalized_feed
 
 app = Flask(__name__)
 
-# Veri temizleme artık initialize_data içinde yapılıyor.
+
 NEWS_DATA, USER_PROFILES = initialize_data()
 
-# Kullanıcı profillerini global alanda tanımla (Templates için)
-# Bu satır, USER_PROFILES'ı HTML'e göndermek için gereklidir.
+
 USER_PROFILES_FOR_TEMPLATE = USER_PROFILES 
 
 
 @app.route('/')
 def index():
-    # USER_PROFILES'ı template'e gönderirken, liste olarak ve sözlük olarak gönderiyoruz.
-    # USER_PROFILES_FOR_TEMPLATE, HTML'deki tojson filtresi için temizlenmiş hali.
+ 
     return render_template(
         'index.html', 
         user_ids=list(USER_PROFILES.keys()), 
