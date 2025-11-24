@@ -1,6 +1,6 @@
 import random
 
-# Simüle edilmiş Türkçe Yorum Veritabanı
+
 POSITIVE_COMMENTS = [
     "AA'nın bu haberi çok başarılı ve yerinde olmuş. Güvenilir kaynak!",
     "Harika bir analiz, detaylı ve aydınlatıcı. Teşekkürler.",
@@ -29,10 +29,8 @@ def simple_turkish_sentiment(comment):
     """
     comment = comment.lower()
     
-    # Negatif kelime kontrolü
     if any(word in comment for word in ["yanlı", "taraflı", "yetersiz", "yanlış", "fiyasko"]):
         return "Negatif"
-    # Pozitif kelime kontrolü
     elif any(word in comment for word in ["başarılı", "harika", "sevindirici", "güvenilir", "aydınlatıcı"]):
         return "Pozitif"
     else:
@@ -46,14 +44,12 @@ def run_sentiment_analysis(num_comments=30):
     for _ in range(num_comments):
         comment_text = random.choice(all_comments)
         
-        # Rastgelelik katmak için bazen ters duygu atayalım (model hatalarını simüle etmek için)
         if random.random() < 0.15: # %15 ihtimalle rastgele duygu atama
             sentiment = random.choice(["Pozitif", "Negatif", "Nötr"])
         else:
             sentiment = simple_turkish_sentiment(comment_text)
             
         
-        # Rastgele bir anahtar kelime atayalım (Filtreleme simülasyonu için)
         keyword = random.choice(["Ekonomi", "Siyaset", "Spor", "Genel"])
 
         analyzed_results.append({
