@@ -1,12 +1,10 @@
 import random
-# from textblob import TextBlob # TextBlob yerine basit kural tabanlı simülasyon kullanıyoruz
 
 def analyze_and_generate_prompt(news_text):
     """
     Haber metnini analiz eder ve görsel üretimi için bir komut (prompt) oluşturur.
     """
     
-    # 1. Simülasyon: Anahtar Kelime/Varlık Çıkarımı
     keywords = {
         "Siyaset": ["başbakan", "meclis", "seçim", "lider"],
         "Ekonomi": ["enflasyon", "merkez bankası", "döviz", "piyasa"],
@@ -15,7 +13,6 @@ def analyze_and_generate_prompt(news_text):
         "Teknoloji": ["yapay zeka", "drone", "yazılım", "robot"]
     }
     
-    # Metindeki anahtar kelimeleri bul ve ana kategoriyi belirle
     detected_keywords = []
     main_category = "Genel"
     
@@ -31,8 +28,7 @@ def analyze_and_generate_prompt(news_text):
     
     main_subject = detected_keywords[0].capitalize()
     
-    # 2. Simülasyon: Duygu Analizi ve Stil Belirleme
-    # Gerçek uygulamada NLP ile yapılır, burada kural tabanlı simüle edelim.
+
     sentiment = "sakin ve profesyonel"
     if any(word in news_text.lower() for word in ["acil", "kriz", "felaket", "şok"]):
         sentiment = "dramatik ve kasvetli"
@@ -41,8 +37,7 @@ def analyze_and_generate_prompt(news_text):
         
     style = "foto-gerçekçi dijital resim, haber ajansı estetiği"
     
-    # 3. Prompt Mühendisliği (Komut Oluşturma)
-    # Metin tabanlı komutu oluştur
+ 
     base_prompt = (
         f"AA (Anadolu Ajansı) tarzında, {style}, {main_subject} konusunu öne çıkaran bir görsel. "
         f"Detay: {main_category} ortamında, {sentiment} bir atmosfer. Telifsiz ve profesyonel görünüm."
