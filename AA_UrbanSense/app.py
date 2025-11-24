@@ -1,21 +1,17 @@
 from flask import Flask, jsonify, render_template
 from analysis_module import generate_raw_data, clean_and_analyze
 
-# Flask uygulaması kurulumu
 app = Flask(__name__)
 
-# Simüle edilmiş ham veri üretimi
 RAW_DATA = generate_raw_data(num_records=100)
 
 @app.route('/')
 def index():
     return render_template('urbansense_index.html')
 
-# Analiz ve Metrik API Uç Noktası
 @app.route('/api/analyze', methods=['GET'])
 def get_analysis():
     try:
-        # Veri temizleme, analiz ve kriz tespiti
         analysis_results = clean_and_analyze(RAW_DATA)
 
         response = {
@@ -30,6 +26,5 @@ def get_analysis():
         return jsonify({"error": f"Analiz sırasında hata oluştu: {str(e)}"}), 500
 
 if __name__ == '__main__':
-    # Not: Gerçek bir projede RAW_DATA'yı buraya yüklemek yerine, 
-    # veritabanından çekmek daha doğru olur.
+
     app.run(debug=True)
