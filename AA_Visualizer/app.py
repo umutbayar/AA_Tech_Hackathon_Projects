@@ -1,14 +1,12 @@
 from flask import Flask, request, jsonify, render_template
 from image_generation_module import analyze_and_generate_prompt
 
-# Flask uygulaması kurulumu
 app = Flask(__name__)
 
 @app.route('/')
 def index():
     return render_template('visualizer_index.html')
 
-# Görsel Komutu Üretme API Uç Noktası
 @app.route('/api/generate_prompt', methods=['POST'])
 def generate_visual():
     data = request.json
@@ -19,7 +17,6 @@ def generate_visual():
     news_text = data['news_text']
 
     try:
-        # NLP ve Prompt Üretim Modülünü Çalıştır
         result = analyze_and_generate_prompt(news_text)
         
         response = {
