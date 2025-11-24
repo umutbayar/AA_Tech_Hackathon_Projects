@@ -4,7 +4,6 @@ import random
 import pandas as pd
 import numpy as np
 
-# --- 1. DAS (Dijital Arşiv Sistemi) Simülasyon Verisi ---
 def create_mock_data():
     """DAS'taki geçmiş haberleri simüle eden veri seti oluşturur."""
     data = [
@@ -18,58 +17,46 @@ def create_mock_data():
     ]
     return pd.DataFrame(data)
 
-# --- 2. İndeksi Başlatma Fonksiyonu ---
 def initialize_das_simulation():
     """DAS verisini yükler ve TF-IDF vektör indeksini oluşturur."""
     
-    # Mock veriyi yükle
     df = create_mock_data()
     
-    # TF-IDF Vektörleştiriciyi tanımla ve veriye uygula
-    # stop_words: 'english' kullanıldı ancak gerçek uygulamada Türkçe stop word listesi kullanılmalıdır.
     vectorizer = TfidfVectorizer(stop_words='english')
     tfidf_matrix = vectorizer.fit_transform(df['text'])
     
-    # İndeks (Vektör Matrisi) ve Vektörleştirici (DAS_INDEX) kaydedilir
-    # df (DAS_ARCHIVE) de kaydedilir
+    
     return (vectorizer, tfidf_matrix), df 
 
 
-# --- 3. İçerik Arama Fonksiyonu (Ana İşlem) ---
 def find_relevant_content(query_text, das_index, das_archive, top_n=5):
     """
     Sorgu metnine en alakalı arşiv içeriğini bulur.
     """
     vectorizer, tfidf_matrix = das_index
     
-    # 1. Sorgu metnini vektörleştir
     query_vec = vectorizer.transform([query_text])
-    
-    # 2. Kosinüs Benzerliği ile benzerlikleri hesapla (Anlamsal Arama)
-    # Bu, sorgu vektörünün DAS matrisindeki her bir dökümanla ne kadar benzer olduğunu ölçer
+ 
     cosine_similarities = cosine_similarity(query_vec, tfidf_matrix).flatten()
     
-    # 3. En iyi 'top_n' sonuçların indeksini al
     related_docs_indices = cosine_similarities.argsort()[:-top_n-1:-1]
     
     results = []
     
-    # 4. Sonuçları formatla
     for i in related_docs_indices:
         
         doc = das_archive.iloc[i]
         similarity_score = cosine_similarities[i]
         
-        # Basit özetleme simülasyonu (Gerçekte NLP ile özetlenir)
         summary = doc['text'][:100] + "..."
         
         results.append({
             "id": int(doc['id']),
             "title": doc['title'],
             "date": doc['date'],
-            "similarity_score": f"{similarity_score:.4f}", # 4 ondalık hassasiyet
+            "similarity_score": f"{similarity_score:.4f}",
             "summary": summary,
-            "full_text": doc['text'] # Detaylı inceleme için tam metin
+            "full_text": doc['text'] 
         })
         
     return results
