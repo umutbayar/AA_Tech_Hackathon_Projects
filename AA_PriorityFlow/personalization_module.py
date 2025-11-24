@@ -23,7 +23,6 @@ def initialize_data():
         'U003': {'name': 'Abone C', 'interests': {'Spor': 0.9, 'Bilim': 0.7, 'Ekonomi': 0.2}},
     }
     
-    # 🚨 HATA ÇÖZÜMÜ: Tüm ilgi katsayılarını float() ile temizleyerek JSON serileştirme hatasını engelleme.
     USER_PROFILES_CLEANED = {}
     for user_id, profile in USER_PROFILES_RAW.items():
         cleaned_profile = profile.copy()
@@ -35,16 +34,13 @@ def initialize_data():
 
     return NEWS_DATA, USER_PROFILES_CLEANED
 
-# initialization'ı çalıştırıyoruz.
 NEWS_DATA, USER_PROFILES = initialize_data()
 
-# Geri kalan fonksiyonlar değişmeden kalır
 
 def get_personalized_feed(user_id, is_breaking, news_data, user_profiles, max_feed_size=8):
     user_interest_vector = user_profiles[user_id]['interests']
     weighted_news = []
     
-    # 1. Kişiselleştirme Aşaması
     for news_id, news_item in news_data.items():
         category = news_item['category']
         interest_weight = user_interest_vector.get(category, 0.0)
@@ -59,7 +55,6 @@ def get_personalized_feed(user_id, is_breaking, news_data, user_profiles, max_fe
     weighted_news.sort(key=lambda x: float(x['relevance_score']), reverse=True)
     final_feed = weighted_news[:max_feed_size]
     
-    # 2. Önceliklendirme Aşaması
     if is_breaking:
         breaking_news = {
             "news_id": 100,
